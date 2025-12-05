@@ -30,16 +30,35 @@ let cars = [];
 let score = 0;
 let keys = {};
 
+// 이미지 로딩
+const images = {};
+const imgFiles = ["car_small.png","car_medium.png","truck.png","chicken.png"];
+let loaded = 0;
+
+imgFiles.forEach(file => {
+    const img = new Image();
+    img.src = "static/images/" + file;
+    img.onload = () => loaded++;
+    images[file] = img;
+});
+
 // 자동차 생성
 function createCars() {
     cars = [];
+    const carTypes = [
+        {img: "car_small.png", w:60, h:25, speed:2},
+        {img: "car_medium.png", w:80, h:30, speed:3},
+        {img: "truck.png", w:120, h:40, speed:1.5}
+    ];
     for (let i = 0; i < 5; i++) {
+        const type = carTypes[Math.floor(Math.random()*carTypes.length)];
         cars.push({
             x: Math.random() * 500,
             y: i * 100,
-            w: 60,
-            h: 25,
-            speed: 2 + Math.random() * 3
+            w: type.w,
+            h: type.h,
+            speed: type.speed + Math.random()*2,
+            img: type.img
         });
     }
 }
@@ -55,58 +74,51 @@ function movePlayer() {
     if (keys["ArrowLeft"]) player.x -= player.speed;
     if (keys["ArrowRight"]) player.x += player.speed;
 
-    // 화면 밖 방지
     player.x = Math.max(0, Math.min(480, player.x));
     player.y = Math.max(0, Math.min(480, player.y));
 }
 
-// 충돌 체크
-function checkCollision(a, b) {
-    return (
-        a.x < b.x + b.w &&
-        a.x + a.size > b.x &&
-        a.y < b.y + b.h &&
-        a.y + a.size > b.y
-    );
+function checkCollision(a,b) {
+    return a.x < b.x+b.w && a.x+a.size > b.x && a.y < b.y+b.h && a.y+a.size > b.y;
 }
 
 // 게임 리셋
 function resetGame() {
     player.x = 240;
     player.y = 460;
-    keys = {};  // 이전 키 입력 초기화
-    createCars();
+    keys = {};      // 이전 키 입력 초기화
+    createCars();   // 자동차 재배치
 }
 
 // 메인 루프
 function gameLoop() {
+    if (loaded < imgFiles.length) { requestAnimationFrame(gameLoop); return; }
+
     ctx.clearRect(0,0,500,500);
 
     // 점수 표시
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
-    ctx.fillText("Score: " + score, 10, 25);
+    ctx.fillText("Score: "+score,10,25);
 
-    // 플레이어
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(player.x, player.y, player.size, player.size);
+    // 플레이어 (닭 이미지)
+    ctx.drawImage(images["chicken.png"], player.x, player.y, player.size, player.size);
 
     // 자동차
-    ctx.fillStyle = "red";
-    cars.forEach(car => {
+    cars.forEach(car=>{
         car.x += car.speed;
-        if (car.x > 500) car.x = -60;
+        if(car.x>500) car.x=-car.w;
+        ctx.drawImage(images[car.img], car.x, car.y, car.w, car.h);
 
-        ctx.fillRect(car.x, car.y, car.w, car.h);
-
-        if (checkCollision(player, car)) {
-            score = 0;  // 점수 초기화
+        // 충돌 체크
+        if(checkCollision(player,car)){
+            score = 0;
             resetGame();
         }
     });
 
     // 도착 지점 체크
-    if (player.y <= 0) {
+    if(player.y<=0){
         score++;
         resetGame();
     }
