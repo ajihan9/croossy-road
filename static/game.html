@@ -28,6 +28,7 @@ const ctx = canvas.getContext("2d");
 let player = { x: 240, y: 460, size: 20, speed: 20 };
 let cars = [];
 let score = 0;
+let keys = {};
 
 // 자동차 생성
 function createCars() {
@@ -44,8 +45,7 @@ function createCars() {
 }
 createCars();
 
-// 캐릭터 입력
-let keys = {};
+// 키 입력
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
 
@@ -70,9 +70,22 @@ function checkCollision(a, b) {
     );
 }
 
+// 게임 리셋
+function resetGame() {
+    player.x = 240;
+    player.y = 460;
+    keys = {};  // 이전 키 입력 초기화
+    createCars();
+}
+
 // 메인 루프
 function gameLoop() {
     ctx.clearRect(0,0,500,500);
+
+    // 점수 표시
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 10, 25);
 
     // 플레이어
     ctx.fillStyle = "yellow";
@@ -86,9 +99,8 @@ function gameLoop() {
 
         ctx.fillRect(car.x, car.y, car.w, car.h);
 
-        // 충돌 처리
         if (checkCollision(player, car)) {
-            alert("🚗💥 Game Over!\nScore: " + score);
+            score = 0;  // 점수 초기화
             resetGame();
         }
     });
@@ -96,19 +108,11 @@ function gameLoop() {
     // 도착 지점 체크
     if (player.y <= 0) {
         score++;
-        alert("🎉 성공! Score: " + score);
         resetGame();
     }
 
     movePlayer();
     requestAnimationFrame(gameLoop);
-}
-
-// 게임 리셋
-function resetGame() {
-    player.x = 240;
-    player.y = 460;
-    createCars();
 }
 
 gameLoop();
